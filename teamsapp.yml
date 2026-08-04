@@ -1,0 +1,11 @@
+{
+  "version": "7.0.0",
+  "components": [
+    {
+      "name": "teams-tab",
+      "provision": true,
+      "deploy": true
+    }
+  ],
+  "projectId": "teams-laura-transcribe-project"
+}

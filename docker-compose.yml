@@ -1,0 +1,20 @@
+services:
+  laura-sync-server:
+    build: ./server
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - AAD_APP_CLIENT_ID=${AAD_APP_CLIENT_ID}
+      - AAD_APP_CLIENT_SECRET=${AAD_APP_CLIENT_SECRET}
+      - AAD_APP_TENANT_ID=${AAD_APP_TENANT_ID:-common}
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_API_URL=${LLM_API_URL:-https://api.anthropic.com/v1/messages}
+      - LLM_MODEL=${LLM_MODEL:-claude-sonnet-4-6}
+      - STORAGE_ENCRYPTION_KEY=${STORAGE_ENCRYPTION_KEY}
+    volumes:
+      - laura-transcript-data:/app/.data
+    restart: unless-stopped
+
+volumes:
+  laura-transcript-data:

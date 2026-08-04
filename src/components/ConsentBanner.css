@@ -1,0 +1,31 @@
+.consent-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.consent-banner--prompt {
+  background: #FFF4CE;
+  border: 1px solid #FFD335;
+  color: #433519;
+}
+
+.consent-banner--active {
+  background: #E9F5E9;
+  border: 1px solid #A7D9A7;
+  color: #1F3D1F;
+  align-items: center;
+}
+
+.consent-banner__text {
+  flex: 1;
+}
+
+.consent-banner__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
