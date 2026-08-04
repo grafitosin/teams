@@ -1,0 +1,16 @@
+{
+  "name": "laura-transcribe-sync-server",
+  "version": "1.0.0",
+  "description": "Sync/merge backend for Laura Transcribe distributed capture architecture",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0",
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "uuid": "^9.0.1"
+  }
+}
