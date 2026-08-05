@@ -16,6 +16,7 @@
 npm install
 ```
 
+
 #### 2. Set Environment Variables
 ```bash
 cp .env.example .env
