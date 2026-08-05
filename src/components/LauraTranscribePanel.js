@@ -269,9 +269,12 @@ const LauraTranscribePanel = ({ frameContext }) => {
       return;
     }
 
-    // Consent gate: don't start capturing this participant's mic until they
-    // have explicitly agreed, and don't re-prompt once already granted.
-    if (consentStatus !== 'granted') {
+    // Consent gate only applies when the distributed-capture sync feature is
+    // actually configured (SYNC_ENDPOINT set) - that's the only case where a
+    // ConsentBanner exists to grant it. In standalone/local-only mode there
+    // is no sync, no other participants to disclose sharing to, and no
+    // banner to click - so start immediately, same as the original single-tab behavior.
+    if (SYNC_ENDPOINT && consentStatus !== 'granted') {
       return; // ConsentBanner is shown in the UI; onAccept below starts capture
     }
 
