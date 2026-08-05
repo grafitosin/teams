@@ -135,17 +135,65 @@ const LauraTranscribePanel = ({ frameContext }) => {
   const [consentStatus, setConsentStatus] = useState('unset'); // 'unset' | 'granted' | 'declined'
   const [participants, setParticipants] = useState([]);
   const [isSynced, setIsSynced] = useState(false);
+  const [isStandaloneMode, setIsStandaloneMode] = useState(false);
   const transcriptEndRef = useRef(null);
   const transcriptionServiceRef = useRef(null);
   const syncServiceRef = useRef(null);
   const meetingIdRef = useRef('default');
 
+  /**
+   * microsoftTeams.app.initialize() only resolves when this page is actually
+   * embedded inside a real Teams client (it performs a postMessage handshake
+   * with the parent Teams frame). Opened directly in a plain browser tab -
+   * e.g. to verify a fresh deployment before sideloading into Teams - that
+   * handshake never completes.
+   *
+   * getTeamsOrMockContext races the real handshake against a short timeout
+   * and falls back to a mock context so the rest of the app (sync, consent,
+   * transcription, minutes) can still be exercised and verified standalone.
+   * This is dev/verification tooling only - it is clearly flagged in the UI
+   * (see the standalone-mode banner below) and should not be mistaken for a
+   * real multi-participant meeting.
+   */
+  const getTeamsOrMockContext = async () => {
+    const TEAMS_HANDSHAKE_TIMEOUT_MS = 2500;
+
+    try {
+      await Promise.race([
+        microsoftTeams.app.initialize(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Teams handshake timed out')), TEAMS_HANDSHAKE_TIMEOUT_MS))
+      ]);
+      const context = await microsoftTeams.app.getContext();
+      return { context, isStandalone: false };
+    } catch (error) {
+      console.warn('Not running inside a Teams client - falling back to standalone dev mode:', error.message);
+
+      // Stable per-tab dev identity, so refreshing the same tab keeps the
+      // same participant identity, while a different tab/browser gets a
+      // different one - useful for manually testing the merge across
+      // "participants" without a real meeting.
+      let devName = sessionStorage.getItem('laura-dev-speaker-name');
+      if (!devName) {
+        devName = `Dev User ${Math.floor(Math.random() * 9000 + 1000)}`;
+        sessionStorage.setItem('laura-dev-speaker-name', devName);
+      }
+
+      const mockContext = {
+        user: { id: devName, displayName: devName, userPrincipalName: `${devName}@standalone.local` },
+        meeting: { id: 'standalone-dev-meeting' },
+        chat: null,
+        page: { subPageId: null }
+      };
+      return { context: mockContext, isStandalone: true };
+    }
+  };
+
   useEffect(() => {
     const init = async () => {
       try {
-        await microsoftTeams.app.initialize();
-        const context = await microsoftTeams.app.getContext();
+        const { context, isStandalone } = await getTeamsOrMockContext();
         setMeetingContext(context);
+        setIsStandaloneMode(isStandalone);
         transcriptionServiceRef.current = new TranscriptionService(context);
 
         const meetingId = context.meeting?.id || context.chat?.id || context.page?.subPageId || 'default';
@@ -458,6 +506,17 @@ const LauraTranscribePanel = ({ frameContext }) => {
           )}
         </div>
       </div>
+
+      {isStandaloneMode && (
+        <div style={{
+          background: '#FFF4CE', border: '1px solid #FFD335', color: '#433519',
+          borderRadius: '8px', padding: '8px 12px', fontSize: '12px', marginTop: '-4px'
+        }}>
+          <strong>Standalone dev mode</strong> — not running inside a real Teams client, so this is a mock
+          identity ({meetingContext?.user?.displayName}) for verifying deployment only. Open two browser tabs to
+          test the merge across two "participants." This is not a real meeting.
+        </div>
+      )}
 
       {SYNC_ENDPOINT && (
         <ConsentBanner
