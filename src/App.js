@@ -33,7 +33,12 @@ function App() {
           }
         });
       } catch (error) {
-        console.error('Teams initialization failed:', error);
+        // Expected when this page isn't embedded inside a real Teams client
+        // (e.g. testing standalone in a plain browser tab) - the panel
+        // component has its own more complete standalone fallback with a
+        // visible UI banner; this is just app-shell theming/frame context,
+        // so a quiet log is enough here rather than an alarming error.
+        console.info('Not running inside Teams - using default theme/frame context.');
         setIsInitialized(true);
       }
     };
