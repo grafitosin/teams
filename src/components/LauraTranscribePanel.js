@@ -237,26 +237,38 @@ const LauraTranscribePanel = ({ frameContext }) => {
 
   const [interimEntry, setInterimEntry] = useState(null);
 
-  const startCapture = useCallback(async () => {
-    if (transcriptionServiceRef.current) {
-      await transcriptionServiceRef.current.start((entry, isInterim) => {
-        if (isInterim) {
-          setInterimEntry(entry);
-          return;
-        }
-        setInterimEntry(null);
+  const [micError, setMicError] = useState(null);
 
-        // Stream this participant's finalized segment to the merge backend.
-        // If no backend is configured, fall back to appending locally so the
-        // panel still works standalone (single-participant / demo mode).
-        if (syncServiceRef.current) {
-          syncServiceRef.current.sendSegment(entry);
-        } else {
-          setTranscript((prev) => [...prev, entry]);
-        }
-      });
+  const startCapture = useCallback(async () => {
+    setMicError(null);
+    try {
+      if (transcriptionServiceRef.current) {
+        await transcriptionServiceRef.current.start((entry, isInterim) => {
+          if (isInterim) {
+            setInterimEntry(entry);
+            return;
+          }
+          setInterimEntry(null);
+
+          // Stream this participant's finalized segment to the merge backend.
+          // If no backend is configured, fall back to appending locally so the
+          // panel still works standalone (single-participant / demo mode).
+          if (syncServiceRef.current) {
+            syncServiceRef.current.sendSegment(entry);
+          } else {
+            setTranscript((prev) => [...prev, entry]);
+          }
+        });
+      }
+      setIsTranscribing(true);
+    } catch (error) {
+      // Previously this rejected silently as an uncaught promise, visible
+      // only in the console - most commonly a mic-permission denial. Surface
+      // it directly in the panel so it's diagnosable without DevTools.
+      console.error('Failed to start transcription:', error);
+      setMicError(error.message || 'Could not start microphone capture.');
+      setIsTranscribing(false);
     }
-    setIsTranscribing(true);
   }, []);
 
   const toggleTranscription = useCallback(async () => {
@@ -518,6 +530,15 @@ const LauraTranscribePanel = ({ frameContext }) => {
           <strong>Standalone dev mode</strong> — not running inside a real Teams client, so this is a mock
           identity ({meetingContext?.user?.displayName}) for verifying deployment only. Open two browser tabs to
           test the merge across two "participants." This is not a real meeting.
+        </div>
+      )}
+
+      {micError && (
+        <div style={{
+          background: '#FDE7E9', border: '1px solid #F1A9AC', color: '#5C1A1D',
+          borderRadius: '8px', padding: '8px 12px', fontSize: '12px'
+        }}>
+          <strong>Couldn't start microphone:</strong> {micError}
         </div>
       )}
 
