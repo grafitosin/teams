@@ -35,6 +35,6 @@
     ]
   },
   "overrides": {
-    "tabster": "^4.21.0"
+    "tabster": "^8.8.0"
   }
 }
